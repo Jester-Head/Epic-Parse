@@ -3,7 +3,8 @@ import scrapy
 
 class WowClassItem(scrapy.Item):
     topic = scrapy.Field()
-    name = scrapy.Field()
+    class_name = scrapy.Field()
+    player_name = scrapy.Field()
     comment = scrapy.Field()
 
 

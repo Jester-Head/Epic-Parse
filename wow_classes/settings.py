@@ -62,9 +62,10 @@ DOWNLOAD_DELAY = 10
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-#ITEM_PIPELINES = {
-#    'wow_classes.pipelines.WowClassesPipeline': 300,
-#}
+ITEM_PIPELINES = {
+   'wow_classes.pipelines.FourmsPipeline': 300,
+    'wow_classes.pipelines.WowheadPipeline': 400
+}
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
@@ -96,9 +97,26 @@ RANDOMIZE_DOWNLOAD_DELAY = True
 # SELENIUM_DRIVER_EXECUTABLE_PATH = 'C:\chromedriver_win32\chromedriver'
 
 #PlAYWRIGHT
-# DOWNLOAD_HANDLERS = {
-#     "http": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
-#     "https": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
-# }
+DOWNLOAD_HANDLERS = {
+    "http": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
+    "https": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
+}
 
-# TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
+TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
+
+
+# Global settings:
+LOG_LEVEL = "INFO"
+LOG_FORMAT = "%(asctime)s : %(levelname)s : %(message)s"
+LOG_FILE = "utilities/info.log"
+
+# Spider variables:
+MONGO_URI = "mongodb://192.168.68.67:49160/"
+MONGO_DATABASE = "wow_test"
+MONGO_COLL_WOWHEAD = "wowhead_items"
+MONGO_COLL_FORUMS = "class_forums"
+
+
+
+
+

@@ -66,18 +66,22 @@ class WoWClassForums(CrawlSpider):
             '//div[1]/div/div/span/time/@datetime').extract()
         likes = comments.xpath(
             '//div[@itemprop="interactionStatistic"]/span/text()').extract()
-        wow_class = response.xpath(
+        class_name = response.xpath(
             '//*[@id="topic-title"]/div/span[2]/a/span[2]/span/text()').extract()
+        
+        player_name = response.xpath('.//span[@class = "creator"]/a/span/text()').extract()
+        # player_name = response.xpath('//a/@data-user-card').extract()
 
-        comments = list(zip(content, likes, date_published))
+        comments = list(zip(player_name,content, likes, date_published,))
 
         for comment in comments:
             item = WowClassItem()
             item['topic'] = title
-            item['name'] = wow_class[0]
+            item['class_name'] = class_name[0]
             item['comment'] = {
-                'content': comment[0],
-                'likes': comment[1],
-                'date': comment[2]
+                'player_name': comment[0],
+                'content': comment[1],
+                'likes': comment[2],
+                'date': comment[3]
             }
             yield item
