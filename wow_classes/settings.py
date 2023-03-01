@@ -111,7 +111,7 @@ LOG_FORMAT = "%(asctime)s : %(levelname)s : %(message)s"
 LOG_FILE = "utilities/info.log"
 
 # Spider variables:
-MONGO_URI = "mongodb://192.168.68.67:49160/"
+MONGO_URI = ""
 MONGO_DATABASE = "wow_test"
 MONGO_COLL_WOWHEAD = "wowhead_items"
 MONGO_COLL_FORUMS = "class_forums"
