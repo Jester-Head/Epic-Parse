@@ -24,28 +24,12 @@ class WoWClassForums(CrawlSpider):
 
     rules = (
 
-        Rule(LinkExtractor(allow=('^https://us.forums.blizzard.com/en/wow/c/'),
-             deny=('^https://worldofwarcraft.com/en-us/character/', '^https://us.forums.blizzard.com/en/wow/u/'))),
+        Rule(LinkExtractor(allow=('^https://us.forums.blizzard.com/en/wow/c/','^https://us.forums.blizzard.com/en/wow/t/'),
+             deny=('^https://worldofwarcraft.com/en-us/character/', '^https://us.forums.blizzard.com/en/wow/u/','h3')),callback='parse_thread'),
+        Rule(LinkExtractor(restrict_css="span > b",deny=('#suggested-topics','div.topic-map','div.post-links-container','h3','div > aside')),follow=True)
+        )
 
-        Rule(LinkExtractor(allow=(
-            '^https://us.forums.blizzard.com/en/wow/t/', )), callback='parse_thread'),
-    )
-
-    def parse(self, response):
-        """
-        Extract links from the page and follow them to extract thread data.
-
-        Parameters:
-            response (Response): The response object containing the page to be parsed.
-
-        Yields:
-            Request: A request for the next page of data to be parsed.
-        """
-        links = response.xpath('//a/@href').extract()
-        for link in links:
-            absolute_url = response.urljoin(link)
-            yield scrapy.Request(absolute_url, callback=self.parse_thread, dont_filter=False, encoding='utf-8')
-
+         
     def parse_thread(self, response):
         """
         Extract data from a forum thread page and create an item for it.
@@ -70,7 +54,7 @@ class WoWClassForums(CrawlSpider):
             '//*[@id="topic-title"]/div/span[2]/a/span[2]/span/text()').extract()
         
         player_name = response.xpath('.//span[@class = "creator"]/a/span/text()').extract()
-        # player_name = response.xpath('//a/@data-user-card').extract()
+   
 
         comments = list(zip(player_name,content, likes, date_published,))
 
@@ -85,3 +69,5 @@ class WoWClassForums(CrawlSpider):
                 'date': comment[3]
             }
             yield item
+
+
