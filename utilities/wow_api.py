@@ -1,6 +1,7 @@
 import requests
 from constant import CLIENT_ID, CLIENT_SECRET
 from requests.auth import HTTPBasicAuth
+import json
 
 
 class WoW_Data:
@@ -22,9 +23,10 @@ class WoW_Data:
         response = requests.get(url)
         if response.status_code == 200:
             print('Success!')
-            print(response.text.encode('utf-8'))
+            return response.json()
         elif response.status_code == 404:
             print('Not Found.')
+            return None
 
     def get_talent_index(self, access_token):
         """
@@ -36,9 +38,10 @@ class WoW_Data:
         response = requests.get(url)
         if response.status_code == 200:
             print('Success!')
-            print(response.text.encode('utf-8'))
+            return response.json()
         elif response.status_code == 404:
             print('Not Found.')
+            return None
 
     def get_pvp_talent_index(self, access_token):
         """
@@ -50,9 +53,10 @@ class WoW_Data:
         response = requests.get(url)
         if response.status_code == 200:
             print('Success!')
-            print(response.text.encode('utf-8'))
+            return response.json()
         elif response.status_code == 404:
             print('Not Found.')
+            return None
 
     def get_tech_talent_index(self, access_token):
         """
@@ -64,9 +68,10 @@ class WoW_Data:
         response = requests.get(url)
         if response.status_code == 200:
             print('Success!')
-            print(response.text.encode('utf-8'))
+            return response.json()
         elif response.status_code == 404:
             print('Not Found.')
+            return None
 
     def create_access_token(self, client_id, client_secret, region='us'):
         """
@@ -83,16 +88,3 @@ class WoW_Data:
         response = requests.post(url, data=body, auth=auth)
         return response.json()
 
-
-def main():
-    # Initialize WoW_Data object
-    wow_data = WoW_Data()
-
-    # Create access token for authentication with Blizzard API
-    response = wow_data.create_access_token(CLIENT_ID, CLIENT_SECRET)
-    access_token = response['access_token']
-    wow_data.get_spells(access_token)
-
-
-if __name__ == "__main__":
-    main()
