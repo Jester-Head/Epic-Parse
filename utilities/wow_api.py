@@ -85,7 +85,7 @@ class WoWData:
                 returned by `create_access_token()`.
 
         Returns:
-        - dict or None: A dictionary containing the PvP talent index data
+        - A dictionary containing the PvP talent index data
                 or None if the request was unsuccessful.
         """
 
@@ -102,7 +102,7 @@ class WoWData:
                 returned by `create_access_token()`.
 
         Returns:
-        - dict or None: A dictionary containing the tech talent index data
+        - A dictionary containing the tech talent index data
                 or None if the request was unsuccessful.
         """ 
 
@@ -120,7 +120,7 @@ class WoWData:
         - spell_id: The ID of the spell to get the description for.
 
         Returns:
-        - dict or None: A dictionary containing the description of the
+        - A dictionary containing the description of the
                 specified spell or None if the request was unsuccessful.
         """
 
@@ -133,12 +133,12 @@ class WoWData:
         """Create an access token for accessing the Blizzard API.
 
         Parameters:
-        - client_id (str): The client ID for your Blizzard API account.
-        - client_secret (str): The client secret for your Blizzard API account.
-        - region (str): The region to create the access token for. Default is "us".
+        - client_id: The client ID for your Blizzard API account.
+        - client_secret: The client secret for your Blizzard API account.
+        - region: The region to create the access token for. Default is "us".
 
         Returns:
-        - dict: A dictionary containing the access token information, including
+        - A dictionary containing the access token information, including
                 the access token and its type.
         """
 
