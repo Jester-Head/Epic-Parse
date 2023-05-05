@@ -1,5 +1,8 @@
+from constant import CLIENT_ID, CLIENT_SECRET
+import json
 import requests
 from requests.auth import HTTPBasicAuth
+
 
 class WoWData:
     """
@@ -41,13 +44,11 @@ class WoWData:
         """
         response = requests.get(url)
         if response.ok:
-            print("Success!")
             return response.json()
         else:
-            print("Not Found.")
             return None
 
-    def get_spells(self, access_token, document_type="spell", orderby="id"):
+    def get_spells(self, access_token, document_type="spell", orderby="id", page="1"):
         """
         Retrieves a list of spells from the API.
 
@@ -59,8 +60,9 @@ class WoWData:
         Returns:
         - A dictionary representing the JSON response from the API.
         """
-        url = f"{self.base_url}search/{document_type}?namespace={self.namespace}&orderby={orderby}"
+        url = f"{self.base_url}search/{document_type}?namespace={self.namespace}&orderby={orderby}&_page={page}"
         url += f"&access_token={access_token['access_token']}"
+
         return self.get_data(access_token, url)
 
     def get_talent_index(self, access_token):
@@ -93,7 +95,6 @@ class WoWData:
         url += f"&access_token={access_token['access_token']}"
         return self.get_data(access_token, url)
 
-
     def get_tech_talent_index(self, access_token):
         """Return the tech talent index for World of Warcraft.
 
@@ -104,12 +105,11 @@ class WoWData:
         Returns:
         - A dictionary containing the tech talent index data
                 or None if the request was unsuccessful.
-        """ 
+        """
 
         url = f"{self.base_url}tech-talent/index?namespace={self.namespace}&locale={self.locale}"
         url += f"&access_token={access_token['access_token']}"
         return self.get_data(access_token, url)
-
 
     def get_description(self, access_token, spell_id):
         """Return the description of a specific spell in World of Warcraft.
@@ -127,7 +127,6 @@ class WoWData:
         url = f"{self.base_url}spell/{spell_id}?namespace={self.namespace}&locale={self.locale}"
         url += f"&access_token={access_token['access_token']}"
         return self.get_data(access_token, url)
-
 
     def create_access_token(self, client_id, client_secret, region="us"):
         """Create an access token for accessing the Blizzard API.
@@ -148,3 +147,30 @@ class WoWData:
 
         response = requests.post(url, data=body, auth=auth)
         return response.json()
+
+
+def write_all_spells(access_token: str, filename: str) -> None:
+    """Writes all spells to a file.
+
+    Parameters:
+    - access_token: The WoW API access token.
+    - filename: The filename to write the spells to.
+
+    Returns:
+        None.
+    """
+
+    wow_data = WoWData()
+    # Get the first page of spells.
+    response = wow_data.get_spells(access_token)
+    # Get the number of pages of spells.
+    page_count = response["pageCount"]
+    with open(filename, "a+") as f:
+        # Write the first page of spells to the file.
+        f.write("[" + json.dumps(response, indent=4))
+        # Iterate through the remaining pages of spells.
+        for page in range(2, page_count + 1):
+            response = wow_data.get_spells(access_token, page=str(page))
+            f.write("," + json.dumps(response, indent=4))
+        f.write("]")
+    return
