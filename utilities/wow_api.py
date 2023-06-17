@@ -50,7 +50,7 @@ class WoWData:
         body = {"grant_type": "client_credentials"}
         auth = HTTPBasicAuth(client_id, client_secret)
 
-        response = requests.post(url, data=body, auth=auth)
+        response = requests.post(url, data=body, auth=auth, timeout=5)
         return response.json()
 
     def get_data(self, access_token, url):
@@ -64,7 +64,7 @@ class WoWData:
         Returns:
         - dict: A dictionary representing the JSON response from the API.
         """
-        response = requests.get(url)
+        response = requests.get(url,timeout=5)
         if response.ok:
             return response.json()
         else:
@@ -199,7 +199,6 @@ def get_spell_index(access_token, filename):
     # Get the first page of spells.
     response = wow_data.get_spells(access_token)
     # Get the number of pages of spells.
-    assert response != None
     page_count = response["pageCount"]
     with open(filename, "a+") as f:
         # Write the first page of spells to the file.
