@@ -1,8 +1,9 @@
-import re
-import pymongo
-from constant import CLIENT_ID, CLIENT_SECRET, CONNECTION, DB_NAME
 import json
+import re
+
+import pymongo
 import requests
+from constant import CONNECTION, DB_NAME
 from requests.auth import HTTPBasicAuth
 
 
@@ -33,6 +34,25 @@ class WoWData:
         self.namespace = "static-us"
         self.locale = "en_US"
 
+    def create_access_token(self, client_id, client_secret, region="us"):
+        """
+        Create an access token for accessing the Blizzard API.
+
+        Parameters:
+        - client_id (str): The client ID for your Blizzard API account.
+        - client_secret (str): The client secret for your Blizzard API account.
+        - region (str): The region to create the access token for. Default is "us".
+
+        Returns:
+        - dict: A dictionary containing the access token information, including the access token and its type.
+        """
+        url = f"https://{region}.battle.net/oauth/token"
+        body = {"grant_type": "client_credentials"}
+        auth = HTTPBasicAuth(client_id, client_secret)
+
+        response = requests.post(url, data=body, auth=auth)
+        return response.json()
+
     def get_data(self, access_token, url):
         """
         Sends a GET request to the specified URL and returns the JSON response.
@@ -49,6 +69,8 @@ class WoWData:
             return response.json()
         else:
             return None
+
+#  Spell API
 
     def get_spells(self, access_token, document_type="spell", orderby="id", page="1"):
         """
@@ -67,6 +89,23 @@ class WoWData:
         url += f"&access_token={access_token['access_token']}"
 
         return self.get_data(access_token, url)
+
+    def get_spell_description(self, access_token, spell_id):
+        """
+        Return the description of a specific spell in World of Warcraft.
+
+        Parameters:
+        - access_token (dict): A dictionary containing the access token returned by `create_access_token()`.
+        - spell_id (str): The ID of the spell to get the description for.
+
+        Returns:
+        - dict: A dictionary containing the description of the specified spell or None if the request was unsuccessful.
+        """
+        url = f"{self.base_url}spell/{spell_id}?namespace={self.namespace}&locale={self.locale}"
+        url += f"&access_token={access_token['access_token']}"
+        return self.get_data(access_token, url)
+
+#  Talent API
 
     def get_talent_index(self, access_token):
         """
@@ -111,35 +150,6 @@ class WoWData:
         url += f"&access_token={access_token['access_token']}"
         return self.get_data(access_token, url)
 
-    def get_tech_talent_index(self, access_token):
-        """
-        Return the tech talent index for World of Warcraft.
-
-        Parameters:
-        - access_token (dict): A dictionary containing the access token returned by `create_access_token()`.
-
-        Returns:
-        - dict: A dictionary containing the tech talent index data or None if the request was unsuccessful.
-        """
-        url = f"{self.base_url}tech-talent/index?namespace={self.namespace}&locale={self.locale}"
-        url += f"&access_token={access_token['access_token']}"
-        return self.get_data(access_token, url)
-
-    def get_spell_description(self, access_token, spell_id):
-        """
-        Return the description of a specific spell in World of Warcraft.
-
-        Parameters:
-        - access_token (dict): A dictionary containing the access token returned by `create_access_token()`.
-        - spell_id (str): The ID of the spell to get the description for.
-
-        Returns:
-        - dict: A dictionary containing the description of the specified spell or None if the request was unsuccessful.
-        """
-        url = f"{self.base_url}spell/{spell_id}?namespace={self.namespace}&locale={self.locale}"
-        url += f"&access_token={access_token['access_token']}"
-        return self.get_data(access_token, url)
-
     def get_talent_description(self, access_token, talent_id):
         """
         Return the description of a specific talent in World of Warcraft.
@@ -155,24 +165,21 @@ class WoWData:
         url += f"&access_token={access_token['access_token']}"
         return self.get_data(access_token, url)
 
-    def create_access_token(self, client_id, client_secret, region="us"):
+#  Tech Talent API
+
+    def get_tech_talent_index(self, access_token):
         """
-        Create an access token for accessing the Blizzard API.
+        Return the tech talent index for World of Warcraft.
 
         Parameters:
-        - client_id (str): The client ID for your Blizzard API account.
-        - client_secret (str): The client secret for your Blizzard API account.
-        - region (str): The region to create the access token for. Default is "us".
+        - access_token (dict): A dictionary containing the access token returned by `create_access_token()`.
 
         Returns:
-        - dict: A dictionary containing the access token information, including the access token and its type.
+        - dict: A dictionary containing the tech talent index data or None if the request was unsuccessful.
         """
-        url = f"https://{region}.battle.net/oauth/token"
-        body = {"grant_type": "client_credentials"}
-        auth = HTTPBasicAuth(client_id, client_secret)
-
-        response = requests.post(url, data=body, auth=auth)
-        return response.json()
+        url = f"{self.base_url}tech-talent/index?namespace={self.namespace}&locale={self.locale}"
+        url += f"&access_token={access_token['access_token']}"
+        return self.get_data(access_token, url)
 
 
 ########################################################

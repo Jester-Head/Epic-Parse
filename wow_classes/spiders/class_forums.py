@@ -1,6 +1,7 @@
 import scrapy
 from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import CrawlSpider, Rule
+from wow_classes.itemloaders import ForumItemLoader
 
 from wow_classes.items import WowClassItem
 
@@ -69,5 +70,8 @@ class WoWClassForums(CrawlSpider):
                 'date': comment[3]
             }
             yield item
+            
+
+        
 
 
