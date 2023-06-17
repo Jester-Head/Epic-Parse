@@ -1,8 +1,7 @@
-import scrapy
 from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import CrawlSpider, Rule
-from wow_classes.itemloaders import ForumItemLoader
 
+from wow_classes.itemloaders import ForumItemLoader
 from wow_classes.items import WowClassItem
 
 
@@ -25,12 +24,12 @@ class WoWClassForums(CrawlSpider):
 
     rules = (
 
-        Rule(LinkExtractor(allow=('^https://us.forums.blizzard.com/en/wow/c/','^https://us.forums.blizzard.com/en/wow/t/'),
-             deny=('^https://worldofwarcraft.com/en-us/character/', '^https://us.forums.blizzard.com/en/wow/u/','h3')),callback='parse_thread'),
-        Rule(LinkExtractor(restrict_css="span > b",deny=('#suggested-topics','div.topic-map','div.post-links-container','h3','div > aside')),follow=True)
-        )
+        Rule(LinkExtractor(allow=('^https://us.forums.blizzard.com/en/wow/c/', '^https://us.forums.blizzard.com/en/wow/t/'),
+             deny=('^https://worldofwarcraft.com/en-us/character/', '^https://us.forums.blizzard.com/en/wow/u/', 'h3')), callback='parse_thread'),
+        Rule(LinkExtractor(restrict_css="span > b", deny=('#suggested-topics',
+             'div.topic-map', 'div.post-links-container', 'h3', 'div > aside')), follow=True)
+    )
 
-         
     def parse_thread(self, response):
         """
         Extract data from a forum thread page and create an item for it.
@@ -53,11 +52,11 @@ class WoWClassForums(CrawlSpider):
             '//div[@itemprop="interactionStatistic"]/span/text()').extract()
         class_name = response.xpath(
             '//*[@id="topic-title"]/div/span[2]/a/span[2]/span/text()').extract()
-        
-        player_name = response.xpath('.//span[@class = "creator"]/a/span/text()').extract()
-   
 
-        comments = list(zip(player_name,content, likes, date_published,))
+        player_name = response.xpath(
+            './/span[@class = "creator"]/a/span/text()').extract()
+
+        comments = list(zip(player_name, content, likes, date_published,))
 
         for comment in comments:
             item = WowClassItem()
@@ -70,8 +69,3 @@ class WoWClassForums(CrawlSpider):
                 'date': comment[3]
             }
             yield item
-            
-
-        
-
-
