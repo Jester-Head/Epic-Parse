@@ -1,37 +1,43 @@
 import json
 import re
+import pandas as pd
 
 import pymongo
 import requests
+from constant import CONNECTION, DB_NAME, CLIENT_SECRET, CLIENT_ID
 from requests.auth import HTTPBasicAuth
-
-from constant import CLIENT_SECRET, CONNECTION, DB_NAME, CLIENT_ID
 
 
 class WoWData:
     """
-    A class that interacts with the World of Warcraft API to retrieve data.
+    A class used to interact with the World of Warcraft (WoW) API to retrieve data.
 
     Attributes:
-    - base_url (str): The base URL of the API.
-    - namespace (str): The namespace to use for requests.
-    - locale (str): The locale to use for requests.
+    - base_url (str): A string representing the base URL of the API.
+    - namespace (str): A string representing the namespace to use for requests.
+    - locale (str): A string representing the locale to use for requests.
 
-    This class provides methods to send GET requests to the API and parse the responses. It can be used to 
-    retrieve information about spells, talents, PvP talents, and tech talents.
+    Methods:
+    - get_data(access_token, url): Sends a GET request to the specified URL and returns the JSON response. Raises an exception if the request fails.
+    - get_spells(access_token, document_type="spell", orderby="id"): Retrieves a list of spells from the WoW API.
+    - get_talent_index(access_token): Retrieves the talent index from the WoW API.
+    - get_pvp_talent_index(access_token): Retrieves the PvP talent index from the API.
+    - get_tech_talent_index(access_token): Retrieves the tech talent index from the API.
+    - get_description(access_token, spell_id): Retrieves the description of a spell with the specified ID from the API.
+    - create_access_token(client_id, client_secret, region="us"): Generates an access token using the specified credentials.
     """
 
     def __init__(self):
         """
-        Initializes a new instance of the WoWData class.
-        """
+    Initializes a new instance of the WoWData class, setting up the base URL, namespace, and locale.
+    """
         self.base_url = "https://us.api.blizzard.com/data/wow/"
         self.namespace = "static-us"
         self.locale = "en_US"
 
     def create_access_token(self, client_id, client_secret, region="us"):
         """
-        Creates an access token for accessing the Blizzard API.
+        Create an access token for accessing the WoW API.
 
         Parameters:
         - client_id (str): The client ID for your Blizzard API account.
@@ -39,7 +45,7 @@ class WoWData:
         - region (str): The region to create the access token for. Default is "us".
 
         Returns:
-        - dict: A dictionary containing the access token information, including the access token itself and its type.
+        - dict: A dictionary containing the access token information, including the access token and its type.
         """
         url = f"https://{region}.battle.net/oauth/token"
         body = {"grant_type": "client_credentials"}
@@ -50,32 +56,26 @@ class WoWData:
 
     def get_data(self, access_token, url):
         """
-        Sends a GET request to the specified URL and returns the JSON response.
+        Sends a GET request to the specified URL and returns the JSON response. Raises an exception if the request fails.
 
         Parameters:
         - access_token (dict): A dictionary representing the access token to use for the request.
         - url (str): A string representing the URL to send the request to.
 
         Returns:
-        - dict: A dictionary representing the JSON response from the API. Returns None if the request failed.
+        - dict: A dictionary representing the JSON response from the API.
         """
-        try:
-            response = requests.get(url, timeout=5)
-            # Raise an exception if the response contains an HTTP error status code.
-            response.raise_for_status()
-        except requests.exceptions.RequestException as e:
-            print(f"An error occurred while sending the request: {e}")
-            return None
-
+        response = requests.get(url, timeout=5)
         if response.ok:
             return response.json()
         else:
-            print(f"Received non-OK status code: {response.status_code}")
             return None
+
+#  Spell API
 
     def get_spells(self, access_token, document_type="spell", orderby="id", page="1"):
         """
-        Retrieves a list of spells from the API.
+        Retrieves a list of spells from the WoW API.
 
         Parameters:
         - access_token (dict): A dictionary representing the access token to use for the request.
@@ -93,99 +93,128 @@ class WoWData:
 
     def get_spell_description(self, access_token, spell_id):
         """
-        Retrieves the description of a spell with the specified ID from the API.
+        Retrieves the description of a specific spell in WoW using its ID.
 
         Parameters:
-        - access_token (dict): A dictionary representing the access token to use for the request.
-        - spell_id (str): A string representing the ID of the spell to retrieve.
+        - access_token (dict): A dictionary containing the access token returned by `create_access_token()`.
+        - spell_id (str): The ID of the spell to get the description for.
 
         Returns:
-        - dict: A dictionary representing the JSON response from the API. Returns None if the request failed.
+        - dict: A dictionary containing the description of the specified spell or None if the request was unsuccessful.
         """
         url = f"{self.base_url}spell/{spell_id}?namespace={self.namespace}&locale={self.locale}"
         url += f"&access_token={access_token['access_token']}"
-
         return self.get_data(access_token, url)
+
+#  Talent API
 
     def get_talent_index(self, access_token):
         """
-        Retrieves the talent index from the API.
+        Retrieves the talent index from the WoW API.
 
         Parameters:
         - access_token (dict): A dictionary representing the access token to use for the request.
 
         Returns:
-        - dict: A dictionary representing the JSON response from the API. Returns None if the request failed.
+        - dict: A dictionary representing the JSON response from the API.
         """
         url = f"{self.base_url}talent/index?namespace={self.namespace}&locale={self.locale}"
         url += f"&access_token={access_token['access_token']}"
-
         return self.get_data(access_token, url)
 
     def get_pvp_talent_index(self, access_token):
         """
-        Retrieves the PvP talent index from the API.
+        Retrieves the PvP talent index from the WoW API.
 
         Parameters:
-        - access_token (dict): A dictionary representing the access token to use for the request.
+        - access_token (dict): A dictionary containing the access token returned by `create_access_token()`.
 
         Returns:
-        - dict: A dictionary representing the JSON response from the API. Returns None if the request failed.
+        - dict: A dictionary containing the PvP talent index data or None if the request was unsuccessful.
         """
         url = f"{self.base_url}pvp-talent/index?namespace={self.namespace}&locale={self.locale}"
         url += f"&access_token={access_token['access_token']}"
-
         return self.get_data(access_token, url)
 
     def get_pvp_talent_description(self, access_token, pvp_talent_id):
         """
-        Retrieves the description of a PvP talent with the specified ID from the API.
+        Retrieves the description of a specific PvP talent in WoW using its ID.
 
         Parameters:
-        - access_token (dict): A dictionary representing the access token to use for the request.
-        - pvp_talent_id (str): A string representing the ID of the PvP talent to retrieve.
+        - access_token (dict): A dictionary containing the access token returned by `create_access_token()`.
+        - pvp_talent_id (str): The ID of the PvP talent to get the description for.
 
         Returns:
-        - dict: A dictionary representing the JSON response from the API. Returns None if the request failed.
+        - dict: A dictionary containing the description of the specified PvP talent or None if the request was unsuccessful.
         """
         url = f"{self.base_url}pvp-talent/{pvp_talent_id}?namespace={self.namespace}&locale={self.locale}"
         url += f"&access_token={access_token['access_token']}"
-
         return self.get_data(access_token, url)
 
     def get_talent_description(self, access_token, talent_id):
         """
-        Retrieves the description of a talent with the specified ID from the API.
+        Retrieves the description of a specific talent in WoW using its ID.
 
         Parameters:
-        - access_token (dict): A dictionary representing the access token to use for the request.
-        - talent_id (str): A string representing the ID of the talent to retrieve.
+        - access_token (dict): A dictionary containing the access token returned by `create_access_token()`.
+        - talent_id (str): The ID of the talent to get the description for.
 
         Returns:
-        - dict: A dictionary representing the JSON response from the API. Returns None if the request failed.
+        - dict: A dictionary containing the description of the specified talent or None if the request was unsuccessful.
         """
         url = f"{self.base_url}talent/{talent_id}?namespace={self.namespace}&locale={self.locale}"
         url += f"&access_token={access_token['access_token']}"
-
         return self.get_data(access_token, url)
+
+    def get_talent_tree(self, access_token, talent_tree):
+        """
+        Retrieves the description of a specific talent in WoW using its ID.
+
+        Parameters:
+        - access_token (dict): A dictionary containing the access token returned by `create_access_token()`.
+        - talent_id (str): The ID of the talent to get the description for.
+
+        Returns:
+        - dict: A dictionary containing the description of the specified talent or None if the request was unsuccessful.
+        """
+        url = f"{self.base_url}talent-tree/{talent_tree}?namespace={self.namespace}&locale={self.locale}"
+        url += f"&access_token={access_token['access_token']}"
+        return self.get_data(access_token, url)
+
+    def get_spec_tree(self, access_token, talent_tree, spec_Id):
+        """
+        Retrieves the description of a specific talent in WoW using its ID.
+
+        Parameters:
+        - access_token (dict): A dictionary containing the access token returned by `create_access_token()`.
+        - talent_id (str): The ID of the talent to get the description for.
+
+        Returns:
+        - dict: A dictionary containing the description of the specified talent or None if the request was unsuccessful.
+        """
+        url = f"{self.base_url}talent-tree/{talent_tree}/playable-specialization/{spec_Id}?namespace={self.namespace}&locale={self.locale}"
+        url += f"&access_token={access_token['access_token']}"
+        return self.get_data(access_token, url)
+#  Tech Talent API
 
     def get_tech_talent_index(self, access_token):
         """
-        Retrieves the tech talent index from the API.
+        Retrieves the tech talent index from the WoW API.
 
         Parameters:
-        - access_token (dict): A dictionary representing the access token to use for the request.
+        - access_token (dict): A dictionary containing the access token returned by `create_access_token()`.
 
         Returns:
-        - dict: A dictionary representing the JSON response from the API. Returns None if the request failed.
+        - dict: A dictionary containing the tech talent index data or None if the request was unsuccessful.
         """
         url = f"{self.base_url}tech-talent/index?namespace={self.namespace}&locale={self.locale}"
         url += f"&access_token={access_token['access_token']}"
-
         return self.get_data(access_token, url)
 
 
-def get_spell_index(access_token, file):
+########################################################
+
+def get_spell_index(access_token, filename):
     """
     Writes all spells to a file.
 
@@ -201,7 +230,7 @@ def get_spell_index(access_token, file):
     response = wow_data.get_spells(access_token)
     # Get the number of pages of spells.
     page_count = response["pageCount"]
-    with open(file, "a+") as f:
+    with open(filename, "a+") as f:
         # Write the first page of spells to the file.
         f.write("[" + json.dumps(response, indent=4))
         # Iterate through the remaining pages of spells.
@@ -243,6 +272,92 @@ def get_all_spells(access_token, read_file, write_file):
     return
 
 
+def get_all_talent_trees(access_token, data=None, collection=None, file=None):
+    wow = WoWData()
+    with open(file=file, mode='a+', encoding='utf-8') as f:
+        f.write('[')
+        for d in data:
+            response = wow.get_talent_tree(access_token, d)
+            f.write(json.dumps(response, indent=4) + ',')
+    remove_last_comma(file)
+    with open(file=file, mode='+a') as f:
+        # Complete the JSON array by adding the closing square bracket.
+        f.write(']')
+    return
+
+
+def extract_spec_info(file=None):
+    # Read the file
+    df = pd.read_csv(file)
+
+    # Initialize lists to hold the extracted values
+    talent_tree = []
+    spec = []
+
+    # Iterate through each row in the dataframe
+    for link in df['url']:
+        # Extract the numbers following "talent-tree/" and "playable-specialization/"
+        # using regular expressions
+        match = re.search(
+            r'talent-tree/(\d+)/playable-specialization/(\d+)', link)
+        if match:
+            # If a match was found, add the numbers to the respective lists
+            talent_tree.append(int(match.group(1)))
+            spec.append(int(match.group(2)))
+        else:
+            # If no match was found, add NaN to the respective lists
+            talent_tree.append(None)
+            spec.append(None)
+
+    # Add the extracted values as new columns in the dataframe
+    df['talent_tree'] = talent_tree
+    df['spec'] = spec
+
+    df[['talent_tree', 'spec']]
+    # Initialize lists to hold the extracted values
+    talent_tree = []
+    spec = []
+
+    # Iterate through each row in the dataframe
+    for url in df['url']:
+        # Extract the numbers following "talent-tree/" and "playable-specialization/"
+        # using regular expressions
+        match = re.search(
+            r'talent-tree/(\d+)/playable-specialization/(\d+)', url)
+        if match:
+            # If a match was found, add the numbers to the respective lists
+            talent_tree.append(int(match.group(1)))
+            spec.append(int(match.group(2)))
+        else:
+            # If no match was found, add NaN to the respective lists
+            talent_tree.append(None)
+            spec.append(None)
+
+    # Add the extracted values as new columns in the dataframe
+    df['talent_tree'] = talent_tree
+    df['spec'] = spec
+
+    return df[['name', 'talent_tree', 'spec']]
+
+
+def get_all_spec_trees(access_token, data=None, collection=None,file='temp.json'):
+    wow = WoWData()
+    talent_tree = data['talent_tree']
+    spec_Id = data['spec']
+    with open(file=file, mode='a+', encoding='utf-8') as f:
+        f.write('[')
+        for i in range(len(data)):
+            response = wow.get_spec_tree(access_token=access_token,talent_tree=talent_tree[i],spec_Id=spec_Id[i])
+            f.write(json.dumps(response, indent=4) + ',')
+    remove_last_comma(file)
+    with open(file=file, mode='+a') as f:
+        # Complete the JSON array by adding the closing square bracket.
+        f.write(']')
+    
+
+    return
+
+
 def add_to_db(collection, data):
     """
     Add data to a MongoDB collection by inserting the 'results' list of each set of data provided
@@ -268,13 +383,13 @@ def add_to_db(collection, data):
     return
 
 
-def get_all_pve_talents(access_token, file):
+def get_all_pve_talents(access_token, file='PvEtemp.json'):
     """
     Retrieves descriptions of all PvE talents and writes them to a file.
 
     Parameters:
     - access_token (str): The WoW API access token.
-    - file (str): The filename to write the talent descriptions to.
+    - file (str): The filename to write the talent descriptions to. Default is 'PvEtemp.json'.
 
     Returns:
     - None or str: Returns None if successful or an error message if there is no response.
@@ -299,13 +414,13 @@ def get_all_pve_talents(access_token, file):
         return 'Error: No Response'
 
 
-def get_all_pvp_talents(access_token, file):
+def get_all_pvp_talents(access_token, file='PvPtemp.json'):
     """
     Retrieves descriptions of all PvP talents and writes them to a file.
 
     Parameters:
     - access_token (str): The WoW API access token.
-    - file (str): The filename to write the talent descriptions to.
+    - file (str): The filename to write the talent descriptions to. Default is 'PvPtemp.json'.
 
     Returns:
     - None or str: Returns None if successful or an error message if there is no response.
