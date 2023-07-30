@@ -1,10 +1,10 @@
 import json
 import re
-import pandas as pd
 
+import pandas as pd
 import pymongo
 import requests
-from constant import CONNECTION, DB_NAME, CLIENT_SECRET, CLIENT_ID
+from constant import CLIENT_ID, CLIENT_SECRET, CONNECTION, DB_NAME
 from requests.auth import HTTPBasicAuth
 
 
@@ -340,22 +340,54 @@ def extract_spec_info(file=None):
     return df[['name', 'talent_tree', 'spec']]
 
 
-def get_all_spec_trees(access_token, data=None, collection=None,file='temp.json'):
-    wow = WoWData()
-    talent_tree = data['talent_tree']
-    spec_Id = data['spec']
-    with open(file=file, mode='a+', encoding='utf-8') as f:
+def get_all_spec_trees(access_token, data=None, file='temp.json'):
+    """
+    Makes API requests to obtain spec trees and saves all responses in a single JSON file.
+
+    This function takes data with talent tree and spec IDs, along with an access token, to make API requests and saves all the responses in a single JSON file specified by the 'file' parameter.
+
+    Parameters:
+        access_token (str): The access token required to make API requests.
+        data (dict): Data containing talent tree and spec IDs for API requests. Default is None.
+        file (str): The name of the output JSON file to save all responses. Default is 'temp.json'.
+
+    Returns:
+        None
+    """
+    if data is None:
+        raise ValueError("Data must be provided to make API requests.")
+
+    with open(file, 'w', encoding='utf-8') as f:
         f.write('[')
         for i in range(len(data)):
-            response = wow.get_spec_tree(access_token=access_token,talent_tree=talent_tree[i],spec_Id=spec_Id[i])
+            response = WoWData().get_spec_tree(access_token=access_token, talent_tree=data[i]['talent_tree'], spec_Id=data[i]['spec'])
             f.write(json.dumps(response, indent=4) + ',')
-    remove_last_comma(file)
-    with open(file=file, mode='+a') as f:
-        # Complete the JSON array by adding the closing square bracket.
         f.write(']')
-    
+        
 
-    return
+def get_all_spec_trees(file):
+    """
+    Reads data from the specified JSON file and saves each response in separate JSON files.
+
+    This function reads data from the specified JSON file, processes it, and saves each response from the data in separate JSON files. The filenames will be derived from the 'name' column in the DataFrame.
+
+    Parameters:
+        file (str): The path to the JSON file containing the data.
+
+    Returns:
+        None
+    """
+    access_token = WoWData().create_access_token(CLIENT_ID, CLIENT_SECRET)
+    df = extract_spec_info(file)
+    spec_names = df['name']
+    for i in range(len(spec_names)):
+        df2 = df.iloc[i][:]
+        talent_tree = df2['talent_tree']
+        spec_Id = df2['spec']
+        response = WoWData().get_spec_tree(access_token=access_token, talent_tree=talent_tree, spec_Id=spec_Id)
+        file_name = f'{spec_names[i]}.json'
+        with open(file_name, 'w') as f:
+            f.write(json.dumps(response, indent=4))
 
 
 def add_to_db(collection, data):
@@ -485,3 +517,6 @@ def connect(collection, con=CONNECTION, db_name=DB_NAME):
     db = client[db_name]
     Collection = db[collection]
     return Collection
+
+
+
