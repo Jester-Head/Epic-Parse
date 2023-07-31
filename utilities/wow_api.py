@@ -56,15 +56,17 @@ class WoWData:
 
     def get_data(self, access_token, url):
         """
-        Sends a GET request to the specified URL and returns the JSON response. Raises an exception if the request fails.
+        Sends a GET request to the specified URL and returns the JSON response.
+        Raises an exception if the request fails.
 
         Parameters:
-        - access_token (dict): A dictionary representing the access token to use for the request.
+        - access_token (dict): A dictionary representing the access token to use for the request. The dictionary must have an 'access_token' key.
         - url (str): A string representing the URL to send the request to.
 
         Returns:
-        - dict: A dictionary representing the JSON response from the API.
+        - dict: A dictionary representing the JSON response from the API. The structure of this dictionary will depend on the specific API endpoint. If the request fails, returns None.
         """
+
         response = requests.get(url, timeout=5)
         if response.ok:
             return response.json()
@@ -214,6 +216,9 @@ class WoWData:
 
 ########################################################
 
+
+# Spells
+
 def get_spell_index(access_token, filename):
     """
     Writes all spells to a file.
@@ -271,8 +276,22 @@ def get_all_spells(access_token, read_file, write_file):
         f.write(']')
     return
 
+# Talent Trees
+
 
 def get_all_talent_trees(access_token, data=None, collection=None, file=None):
+    """
+    Retrieves information about all talent trees.
+
+    This function makes API requests to retrieve information about all talent trees. The specific information retrieved and how it is handled is dependent on the implementation of the function.
+
+    Parameters:
+    - access_token (str): The access token required to make API requests.
+
+    Returns:
+    - dict or None: A dictionary containing information about all talent trees, or None if the API request is unsuccessful. The structure of the returned dictionary will depend on the specific API endpoint.
+    """
+
     wow = WoWData()
     with open(file=file, mode='a+', encoding='utf-8') as f:
         f.write('[')
@@ -287,6 +306,18 @@ def get_all_talent_trees(access_token, data=None, collection=None, file=None):
 
 
 def extract_spec_info(file=None):
+    """
+    Extracts specific information from a larger dataset.
+
+    This function is designed to extract specific information from a larger dataset. The specific information to be extracted and the structure of the input data is dependent on the implementation of the function.
+
+    Parameters:
+    - data (dict or list): The data from which to extract information.
+
+    Returns:
+    - dict or list or None: The extracted information, or None if the extraction is unsuccessful. The type and structure of the return value will depend on the specific implementation of the function.
+    """
+
     # Read the file
     df = pd.read_csv(file)
 
@@ -334,10 +365,16 @@ def extract_spec_info(file=None):
             spec.append(None)
 
     # Add the extracted values as new columns in the dataframe
+    class_dict = {'774': 'Hunter', '786': 'Shaman', '793': 'Druid', '872': 'Evoker', '850': 'Warrior', '877': 'Warlock', '781': 'Monk',
+                  '750': 'Death Knight', '790': 'Paladin', '795': 'Priest', '658': 'Mage', '720': 'Warlock_2', '852': 'Rogue', '854': 'Demon Hunter', '701': 'Evoker_2'}
     df['talent_tree'] = talent_tree
     df['spec'] = spec
+    df[['name', 'talent_tree', 'spec']]
+    df['class'] = df['talent_tree'].apply(lambda x: class_dict[f'{x}'])
+    df['class_spec'] = list(zip(df['name'], df['class']))
+    df['class_spec'] = df['class_spec'].apply(lambda x: ' '.join(x))
 
-    return df[['name', 'talent_tree', 'spec']]
+    return df
 
 
 def get_all_spec_trees(access_token, data=None, file='temp.json'):
@@ -356,63 +393,45 @@ def get_all_spec_trees(access_token, data=None, file='temp.json'):
     """
     if data is None:
         raise ValueError("Data must be provided to make API requests.")
-
     with open(file, 'w', encoding='utf-8') as f:
         f.write('[')
         for i in range(len(data)):
-            response = WoWData().get_spec_tree(access_token=access_token, talent_tree=data[i]['talent_tree'], spec_Id=data[i]['spec'])
+            response = WoWData().get_spec_tree(access_token=access_token,
+                                               talent_tree=data[i]['talent_tree'], spec_Id=data[i]['spec'])
             f.write(json.dumps(response, indent=4) + ',')
         f.write(']')
-        
+
 
 def get_all_spec_trees(file):
     """
-    Reads data from the specified JSON file and saves each response in separate JSON files.
+    Makes API requests to obtain spec trees and saves all responses in a single JSON file.
 
-    This function reads data from the specified JSON file, processes it, and saves each response from the data in separate JSON files. The filenames will be derived from the 'name' column in the DataFrame.
+    This function takes data with talent tree and spec IDs, along with an access token, to make API requests and saves all the responses in a single JSON file specified by the 'file' parameter.
 
     Parameters:
-        file (str): The path to the JSON file containing the data.
+    - access_token (str): The access token required to make API requests.
+    - data (dict): Data containing talent tree and spec IDs for API requests. Default is None.
+    - file (str): The name of the output JSON file to save all responses. Default is 'temp.json'.
 
     Returns:
-        None
+    - None: This function does not return a value. It saves the API responses to a JSON file.
     """
+
     access_token = WoWData().create_access_token(CLIENT_ID, CLIENT_SECRET)
     df = extract_spec_info(file)
     spec_names = df['name']
+    class_spec = df['class_spec']
     for i in range(len(spec_names)):
         df2 = df.iloc[i][:]
         talent_tree = df2['talent_tree']
         spec_Id = df2['spec']
-        response = WoWData().get_spec_tree(access_token=access_token, talent_tree=talent_tree, spec_Id=spec_Id)
-        file_name = f'{spec_names[i]}.json'
+        response = WoWData().get_spec_tree(access_token=access_token,
+                                           talent_tree=talent_tree, spec_Id=spec_Id)
+        file_name = f'{class_spec[i]}.json'
         with open(file_name, 'w') as f:
             f.write(json.dumps(response, indent=4))
 
-
-def add_to_db(collection, data):
-    """
-    Add data to a MongoDB collection by inserting the 'results' list of each set of data provided
-    into the specified collection within the MongoDB database.
-
-    Parameters:
-    - collection (pymongo.collection.Collection): The MongoDB collection where the data will be inserted.
-    - data (list): The data to be inserted into the collection.
-
-    Returns:
-    - None
-    """
-    pattern = r"static-(\d+\.\d+\.\d+)"
-    patch = ''
-    for d in data:
-        pattern = r"static-(\d+\.\d+\.\d+)"
-        link = d['_links']['self']['href']
-        patch = re.findall(pattern, link)
-        # Insert each data entry into the collection.
-        collection.insert_one(d)
-    # Update the 'patch' field for all documents in the collection.
-    collection.update_many({}, {"$set": {"patch": patch[0]}})
-    return
+# Talents
 
 
 def get_all_pve_talents(access_token, file='PvEtemp.json'):
@@ -424,8 +443,9 @@ def get_all_pve_talents(access_token, file='PvEtemp.json'):
     - file (str): The filename to write the talent descriptions to. Default is 'PvEtemp.json'.
 
     Returns:
-    - None or str: Returns None if successful or an error message if there is no response.
+    - None: This function does not return a value. If there is no response from the API, an error message is printed to the console.
     """
+
     response = WoWData().get_talent_index(access_token=access_token)
     if response:
         talents = response['talents']
@@ -455,8 +475,9 @@ def get_all_pvp_talents(access_token, file='PvPtemp.json'):
     - file (str): The filename to write the talent descriptions to. Default is 'PvPtemp.json'.
 
     Returns:
-    - None or str: Returns None if successful or an error message if there is no response.
+    - None: This function does not return a value. If there is no response from the API, an error message is printed to the console.
     """
+
     response = WoWData().get_pvp_talent_index(access_token)
     if response:
         talents = response['pvp_talents']
@@ -475,6 +496,8 @@ def get_all_pvp_talents(access_token, file='PvPtemp.json'):
         return
     else:
         return 'Error: No Response'
+
+# Helpers
 
 
 def remove_last_comma(file):
@@ -519,4 +542,26 @@ def connect(collection, con=CONNECTION, db_name=DB_NAME):
     return Collection
 
 
+def add_to_db(collection, data):
+    """
+    Add data to a MongoDB collection by inserting the 'results' list of each set of data provided
+    into the specified collection within the MongoDB database.
 
+    Parameters:
+    - collection (pymongo.collection.Collection): The MongoDB collection where the data will be inserted.
+    - data (list): The data to be inserted into the collection.
+
+    Returns:
+    - None
+    """
+    pattern = r"static-(\d+\.\d+\.\d+)"
+    patch = ''
+    for d in data:
+        pattern = r"static-(\d+\.\d+\.\d+)"
+        link = d['_links']['self']['href']
+        patch = re.findall(pattern, link)
+        # Insert each data entry into the collection.
+        collection.insert_one(d)
+    # Update the 'patch' field for all documents in the collection.
+    collection.update_many({}, {"$set": {"patch": patch[0]}})
+    return
