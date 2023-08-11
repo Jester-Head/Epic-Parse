@@ -62,7 +62,7 @@ class WoWData:
         - dict: A dictionary representing the JSON response from the API. The structure of this dictionary will depend on the specific API endpoint. If the request fails, returns None.
         """
 
-        response = requests.get(url)
+        response = requests.get(url,timeout=0.001)
         if response.ok:
             return response.json()
         else:
