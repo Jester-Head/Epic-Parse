@@ -1,5 +1,9 @@
 wow_classes/settings.py
+utilities/config.py
 utilities/info.log
 utilities/constant.py
+utilities/scripts.py
 notebooks
 data
+forums_crawler/settings.py
+scrapy.cfg
