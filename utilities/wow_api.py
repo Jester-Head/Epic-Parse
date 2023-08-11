@@ -46,7 +46,7 @@ class WoWData:
         body = {"grant_type": "client_credentials"}
         auth = HTTPBasicAuth(client_id, client_secret)
 
-        response = requests.post(url, data=body, auth=auth, timeout=5)
+        response = requests.post(url, data=body, auth=auth, timeout=0.001)
         return response.json()
 
     def get_data(self, access_token, url):
