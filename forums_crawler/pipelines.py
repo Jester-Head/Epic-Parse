@@ -2,6 +2,7 @@ import pymongo
 from itemadapter import ItemAdapter
 from pymongo import errors
 
+
 class FourmsPipeline:
     def __init__(self, mongo_uri, mongo_db, mongo_coll):
         """
@@ -30,7 +31,8 @@ class FourmsPipeline:
         return cls(
             mongo_uri=crawler.settings.get("MONGO_URI"),
             mongo_db=crawler.settings.get("MONGO_DATABASE", "wow_test"),
-            mongo_coll=crawler.settings.get("MONGO_COLL_FORUMS", "class_forums"),
+            mongo_coll=crawler.settings.get(
+                "MONGO_COLL_FORUMS", "class_forums"),
         )
 
     def open_spider(self, spider):
@@ -43,17 +45,20 @@ class FourmsPipeline:
         self.client = pymongo.MongoClient(self.mongo_uri)
         self.db = self.client[self.mongo_db]
         self.collection = self.db[self.mongo_coll]
-        
-        # Create a unique compound index
-        self.collection.create_index([
-            ("topic", 1),
-            ("class_name", 1),
-            ("comment", 1),
-            ("player_name", 1),
-            ("content", 1),
-            ("likes", 1),
-            ("date", 1)
-        ], unique=True)
+
+        try:
+            # Create a unique compound index
+            self.collection.create_index([
+                ("topic", 1),
+                ("class_name", 1),
+                ("comment", 1),
+                ("player_name", 1),
+                ("content", 1),
+                ("likes", 1),
+                ("date", 1)
+            ], unique=True)
+        except errors.OperationFailure as e:
+            spider.logger.error(f"Error creating index: {e}")
 
     def close_spider(self, spider):
         """
@@ -80,6 +85,7 @@ class FourmsPipeline:
             item_dict = ItemAdapter(item).asdict()
             self.collection.insert_one(item_dict)
         except errors.DuplicateKeyError:
+            item_dict = ItemAdapter(item).asdict()
             spider.logger.info("Duplicate item found: %s", item_dict)
             pass
         return item
