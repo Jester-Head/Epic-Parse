@@ -1,6 +1,6 @@
 import pymongo
 from itemadapter import ItemAdapter
-
+from pymongo import errors
 
 class FourmsPipeline:
     def __init__(self, mongo_uri, mongo_db, mongo_coll):
@@ -25,27 +25,61 @@ class FourmsPipeline:
             crawler (Crawler): The Scrapy Crawler instance.
 
         Returns:
-            FourmsPipeline: The initialized pipeline instance.
+            FourmsPipeline: An instance of FourmsPipeline initialized with settings from the crawler.
         """
         return cls(
             mongo_uri=crawler.settings.get("MONGO_URI"),
             mongo_db=crawler.settings.get("MONGO_DATABASE", "wow_test"),
-            mongo_coll=crawler.settings.get(
-                "MONGO_COLL_FORUMS", "class_forums"),
+            mongo_coll=crawler.settings.get("MONGO_COLL_FORUMS", "class_forums"),
         )
 
     def open_spider(self, spider):
-        """Connect to MongoDB when the spider is opened."""
+        """
+        Establish a connection to MongoDB when the spider is opened and set up the necessary indexes.
+
+        Parameters:
+            spider (Spider): The Scrapy Spider instance that is being run.
+        """
         self.client = pymongo.MongoClient(self.mongo_uri)
         self.db = self.client[self.mongo_db]
         self.collection = self.db[self.mongo_coll]
+        
+        # Create a unique compound index
+        self.collection.create_index([
+            ("topic", 1),
+            ("class_name", 1),
+            ("comment", 1),
+            ("player_name", 1),
+            ("content", 1),
+            ("likes", 1),
+            ("date", 1)
+        ], unique=True)
 
     def close_spider(self, spider):
-        """Close the connection to MongoDB when the spider is closed."""
+        """
+        Close the connection to MongoDB when the spider is closed.
+
+        Parameters:
+            spider (Spider): The Scrapy Spider instance that has finished running.
+        """
         self.client.close()
 
     def process_item(self, item, spider):
-        """Process an item by inserting it into the MongoDB collection."""
-        item_dict = ItemAdapter(item).asdict()
-        self.collection.insert_one(item_dict)
+        """
+        Process an item by inserting it into the MongoDB collection. If a duplicate item is detected, 
+        it's logged and skipped.
+
+        Parameters:
+            item (Item): The item scraped by the spider.
+            spider (Spider): The Scrapy Spider instance that scraped the item.
+
+        Returns:
+            Item: The processed item.
+        """
+        try:
+            item_dict = ItemAdapter(item).asdict()
+            self.collection.insert_one(item_dict)
+        except errors.DuplicateKeyError:
+            spider.logger.info("Duplicate item found: %s", item_dict)
+            pass
         return item
