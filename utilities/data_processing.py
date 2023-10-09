@@ -1,9 +1,11 @@
 
+import hashlib
 import json
+import os
 import re
 
 import pandas as pd
-from config import CLASSES, CLIENT_ID, CLIENT_SECRET
+from config import CLASSES, CLIENT_ID, CLIENT_SECRET, ALL_ABILITIES, EXCLUDED_EXT, PVE_TALENTS_CSV, PVP_TALENTS_CSV, SPELLS_CSV
 
 from wow_api import WoWData
 
@@ -281,3 +283,84 @@ def flatten_pvp_to_dataframe(pvp_data):
 
     # Convert to DataFrame and return
     return pd.DataFrame(flattened_pvp_data)
+
+def add_class_spec_name(data_frame, file_path, excluded_extensions=EXCLUDED_EXT):
+    """
+    Add class name to the data frame based on the file name.
+
+    This function extracts the class name from the provided file name and adds it as a new column
+    'playable_class.name' to the data frame.
+
+    Parameters:
+        data_frame (pd.DataFrame): The input data frame to which the class name will be added.
+        file_path (str): The path to the file containing the talent tree data.
+        excluded_extensions (list): List of file extensions to exclude from the file name.
+
+    Returns:
+        pd.DataFrame: The updated data frame with the 'playable_class.name' column added.
+    """
+    basename = os.path.basename(file_path)
+
+    # Remove specified extensions from the file name
+    if excluded_extensions:
+        for extension in excluded_extensions:
+            basename = re.sub(rf'(\.{extension})', '', basename)
+
+    # Remove any remaining spaces or underscores
+    class_name = re.sub(r'(\s|_|\.+)', '', basename).strip()
+
+    # List of class names without spaces
+    classes = [str.replace(c, ' ', '') for c in list(CLASSES.values())]
+
+    # Check if the extracted name matches any class name
+    class_name = class_name if class_name in classes else None
+
+    # Add the class name to the data frame
+    data_frame['playable_class.name'] = class_name
+
+    return data_frame
+
+
+
+def extract_talent_nodes(file_path):
+    """
+    Extracts talent nodes from a JSON file and processes them into a DataFrame.
+
+    This method reads a JSON file containing talent nodes, extracts relevant 
+    information about spells associated with each talent node, and returns a 
+    DataFrame with the spell's name and its description.
+
+    Nodes without the 'ranks' key are skipped during the extraction process.
+
+    Parameters:
+    - file_path (str): The path to the JSON file to be processed.
+
+    Returns:
+    - DataFrame: A DataFrame with columns 'spell_name' and 'description'. 
+
+    Raises:
+    - FileNotFoundError: If the specified file_path does not exist.
+    """
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"File not found: {file_path}")
+
+    data = load_json_data(file_path)
+    data.drop(columns='spec_talent_trees', inplace=True)
+
+    # Flatten the 'talent_nodes' key and filter out nodes without 'ranks'
+    nodes = data['talent_nodes'].explode().dropna()
+    nodes_with_ranks = nodes[nodes.apply(lambda x: 'ranks' in x)]
+
+    talent_nodes_df = pd.json_normalize(
+        nodes_with_ranks, record_path=['ranks'], errors='ignore')
+
+    spells = talent_nodes_df[[
+        'tooltip.spell_tooltip.spell.name', 'tooltip.spell_tooltip.description']].dropna()
+
+    spells.rename(columns={'tooltip.spell_tooltip.spell.name': 'spell_name',
+                           'tooltip.spell_tooltip.description': 'description'}, inplace=True)
+    spells=add_class_spec_name(spells,file_path)
+    return spells
+
+
+

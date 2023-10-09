@@ -1,7 +1,7 @@
 import json
 import os
 import pandas as pd
-from data_processing import flatten_pve_to_dataframe, flatten_trees, merge_frames
+from data_processing import extract_talent_nodes, flatten_pve_to_dataframe, flatten_trees, merge_frames, add_class_spec_name
 
 
 def start_json_file(file):
@@ -14,7 +14,7 @@ def start_json_file(file):
     Returns:
     - None
     """
-    with open(file, 'w') as f:
+    with open(file, 'w+') as f:
         f.write("[")
     pass
 
@@ -93,7 +93,6 @@ def convert_json_to_csv(directory):
             output_dir = 'data/talent_trees_csv'
             if not os.path.exists(output_dir):
                 os.makedirs(output_dir)
-
             df.to_csv(os.path.join(output_dir, csv_name), index=False)
 
 
@@ -106,12 +105,98 @@ def read_json_file(filename):
             return None
 
 
-def convert_talents_to_csv(path,json_data):
+def convert_talents_to_csv(path, json_data):
     # Flatten each entry in the JSON data with the safe method
-    flattened_data_safe = [flatten_pve_to_dataframe(entry) for entry in json_data]
+    flattened_data_safe = [flatten_pve_to_dataframe(
+        entry) for entry in json_data]
 
     # Convert to DataFrame
     df_safe = pd.DataFrame(flattened_data_safe)
 
     # Export to CSV
     df_safe.to_csv(path, index=False)
+
+
+def update_talents_csv(file_dir):
+    """
+    Update CSV files located in the specified directory with class and spec names.
+
+    The function will:
+    1. List all files in the provided directory.
+    2. For each file, read its contents into a DataFrame.
+    3. Add class and spec names to the DataFrame using the add_class_spec_name function.
+    4. Write the updated DataFrame back to the same file, overwriting the original contents.
+
+    Args:
+    - file_dir (str): Path to the directory containing the CSV files to be updated.
+
+    Returns:
+    None
+
+    Notes:
+    - This function assumes that the add_class_spec_name function is defined and takes a DataFrame and a filename as its arguments.
+    - It overwrites the original files in place with the updated data.
+    """
+    file_list = os.listdir(file_dir)
+    file_p = [os.path.join(file_dir, f) for f in file_list]
+    for file in file_p:
+        df = add_class_spec_name(pd.read_csv(file), file)
+        df.to_csv(file, index=False, mode='w+')
+
+
+def combine_files(source_directory, output_file, file_extension='.csv'):
+    """
+    Combine all files with a specific extension from a directory and its subdirectories into a single file using pandas.
+
+    Args:
+    - source_directory (str): Path to the directory to start searching for files.
+    - output_file (str): Path to the output file where all contents will be written.
+    - file_extension (str): Extension of the files to be combined. Default is '.csv'.
+
+    Returns:
+    None
+    """
+
+    # Create a list comprehension to capture all file paths
+    file_paths = [os.path.join(dirpath, filename)
+                  for dirpath, dirnames, filenames in os.walk(source_directory)
+                  for filename in filenames if filename.endswith(file_extension)]
+
+    # Read and concatenate all the dataframes
+    all_data = pd.concat([pd.read_csv(filepath)
+                         for filepath in file_paths], ignore_index=True)
+
+    # Write the combined dataframe to the output file
+    all_data.to_csv(output_file, index=False)
+
+
+def convert_talent_nodes_csv(source_directory):
+    """
+    Converts JSON files in a given directory to CSV format.
+
+    This function searches for all JSON files within the specified directory.
+    For each JSON file, it extracts the talent nodes using the 
+    `extract_talent_nodes` function and then saves the resulting data 
+    as a CSV file in the same directory. Existing CSV files in the directory 
+    are skipped during the conversion process.
+
+    Parameters:
+    - source_directory (str): The path to the directory containing the JSON files.
+
+    Returns:
+    None. The resulting CSV files are saved directly to the source directory.
+
+    Note:
+    - Ensure that the `os` module is imported before using this function.
+    - This function relies on the `extract_talent_nodes` function to process the JSON data.
+    """
+    json_name = list()
+    for root, dirs, files in os.walk(source_directory):
+        for name in files:
+            if not name.endswith('.csv'):  # Skip .csv files
+                json_name.append(name)
+
+    for n in json_name:
+        df = extract_talent_nodes(source_directory+n)
+        csv_name = str.replace(n, '.json', '.csv')
+        df.to_csv(source_directory+csv_name, index=False, header=df.columns)

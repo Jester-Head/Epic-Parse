@@ -24,11 +24,10 @@ class WoWClassForums(CrawlSpider):
 
     rules = (
 
-        Rule(LinkExtractor(allow=('^https://us.forums.blizzard.com/en/wow/c/'),
-             deny=('^https://worldofwarcraft.com/en-us/character/', '^https://us.forums.blizzard.com/en/wow/u/'))),
-
-        Rule(LinkExtractor(allow=(
-            '^https://us.forums.blizzard.com/en/wow/t/', )), callback='parse_thread'),
+        Rule(LinkExtractor(allow=('^https://us.forums.blizzard.com/en/wow/c/', '^https://us.forums.blizzard.com/en/wow/t/'),
+             deny=('^https://worldofwarcraft.com/en-us/character/', '^https://us.forums.blizzard.com/en/wow/u/', 'h3')), callback='parse_thread'),
+        Rule(LinkExtractor(restrict_css="span > b", deny=('#suggested-topics',
+             'div.topic-map', 'div.post-links-container', 'h3', 'div > aside')), follow=True)
     )
 
     def parse(self, response):
@@ -62,15 +61,17 @@ class WoWClassForums(CrawlSpider):
         title = response.xpath('//h1/a/text()').extract_first()
 
         content = comments.xpath('//div[@class="post"]/p/text()').extract()
-        date_published = comments.xpath('//span[@class="crawler-post-infos"]/time[@itemprop="datePublished"]/@datetime').extract()
+        date_published = comments.xpath(
+            '//span[@class="crawler-post-infos"]/time[@itemprop="datePublished"]/@datetime').extract()
         likes = comments.xpath(
             '//span[contains(text(),\'Likes\')]/text()').extract()
         class_name = response.xpath(
             '//*[@id="topic-title"]/div/span[2]/a/span[2]/span/text()').extract()
-        
-        player_name = response.xpath('//span[@class="creator" and @itemprop="author"]/a/span[@itemprop="name"]/text()').extract()
 
-        comments = list(zip(player_name,content, likes, date_published,))
+        player_name = response.xpath(
+            '//span[@class="creator" and @itemprop="author"]/a/span[@itemprop="name"]/text()').extract()
+
+        comments = list(zip(player_name, content, likes, date_published,))
 
         for comment in comments:
             item = WowClassItem()

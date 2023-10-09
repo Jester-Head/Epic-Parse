@@ -1,5 +1,6 @@
-from config import CLIENT_ID, CLIENT_SECRET
+from config import CLASSES
 from file_utils import finish_json_file, read_json_file, remove_last_comma, start_json_file, write_json_array_to_file
+from data_processing import extract_info_from_url, extract_spec_talent_trees
 from wow_api import WoWData
 import pandas as pd
 
@@ -133,3 +134,36 @@ def save_talent_tree_index(access_token, file):
     response = WoWData().get_talent_tree_index(access_token=access_token)
     write_json_array_to_file(filename=file, data=response)
     remove_last_comma(file)
+
+
+def save_talent_tree_nodes(access_token, read_file, write_file):
+    """
+    Fetch and save talent tree nodes for each class and specialization.
+
+    This function retrieves talent tree nodes for each class and specialization
+    specified in the input JSON file, and saves the responses as separate JSON files.
+
+    Parameters:
+        access_token (str): The access token required to make API requests.
+        read_file (str): The path to the JSON file containing class and specialization data.
+        write_file (str): The base path for saving the talent tree node JSON files.
+
+    Returns:
+        None
+    """
+    # Extract class and specialization information from the JSON file
+    df = extract_spec_talent_trees(read_file)
+    urls = df['url'].apply(extract_info_from_url)
+
+    for url in urls:
+        name = CLASSES[str(url[0])]
+        talentTreeId = str(url[0])
+        file = f'{write_file}{name}.json'
+        file = str.replace(file, ' ', '')
+        start_json_file(file)
+
+        # Fetch talent tree nodes and save the response as a JSON file
+        response = WoWData().get_talent_tree_nodes(access_token, talentTreeId)
+        write_json_array_to_file(filename=file, data=response)
+        remove_last_comma(file)
+        finish_json_file(file)

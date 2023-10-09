@@ -62,7 +62,7 @@ class WoWData:
         - dict: A dictionary representing the JSON response from the API. The structure of this dictionary will depend on the specific API endpoint. If the request fails, returns None.
         """
 
-        response = requests.get(url,timeout=0.001)
+        response = requests.get(url, timeout=0.001)
         if response.ok:
             return response.json()
         else:
@@ -189,8 +189,7 @@ class WoWData:
         Returns:
         - dict: A dictionary containing the description of the specified talent or None if the request was unsuccessful.
         """
-        
- 
+
         url = f"{self.base_url}talent-tree/{talent_tree}/playable-specialization/{spec_Id}?namespace={self.namespace}&locale={self.locale}"
         url += f"&access_token={access_token['access_token']}"
         return self.get_data(access_token, url)
@@ -200,7 +199,7 @@ class WoWData:
         url = f"{self.base_url}playable-specialization/index?namespace={self.namespace}&locale={self.locale}"
         url += f"&access_token={access_token['access_token']}"
         return self.get_data(access_token, url)
-    
+
     def get_talent_tree_index(self, access_token):
         url = f"{self.base_url}talent-tree/index?namespace={self.namespace}&locale={self.locale}"
         url += f"&access_token={access_token['access_token']}"
@@ -220,6 +219,3 @@ class WoWData:
         url = f"{self.base_url}tech-talent/index?namespace={self.namespace}&locale={self.locale}"
         url += f"&access_token={access_token['access_token']}"
         return self.get_data(access_token, url)
-
-
-
