@@ -2,17 +2,18 @@ import scrapy
 from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import CrawlSpider, Rule
 
-from wow_classes.items import WowClassItem
+from forums_crawler.items import WowClassItem
+
 
 
 class WoWClassForums(CrawlSpider):
     """
     A Scrapy spider that crawls the World of Warcraft forums and extracts information about class-specific discussions.
     """
-    name = 'wow_classes'
+    name = 'class_forums'
     custom_settings = {
         'ITEM_PIPELINES': {
-            'wow_classes.pipelines.FourmsPipeline': 300,
+            'class_forums.pipelines.FourmsPipeline': 300,
         }
     }
 
