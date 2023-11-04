@@ -4,9 +4,11 @@ import pandas as pd
 from data_processing import extract_talent_nodes, flatten_pve_to_dataframe, flatten_trees, merge_frames, add_class_spec_name
 
 
+
 def start_json_file(file):
     """ 
-    Prepares a file for writing JSON data by adding an opening square bracket.
+    Ensures the directory exists and prepares a file for writing JSON data 
+    by adding an opening square bracket.
 
     Parameters:
     - file (str): The filename or path to the file.
@@ -14,9 +16,12 @@ def start_json_file(file):
     Returns:
     - None
     """
+    # Ensure the directory exists
+    os.makedirs(os.path.dirname(file), exist_ok=True)
+    
+    # Now open the file and write the opening square bracket
     with open(file, 'w+') as f:
         f.write("[")
-    pass
 
 
 def finish_json_file(file):

@@ -48,7 +48,14 @@ def fetch_and_save_data(access_token):
 
 
 def process_data():
-    """ Process the saved data. """
+    """ 
+    Process the fetched data from the WoW API.
+
+    This includes extracting information from the JSON files, converting them to CSV format, 
+    and performing other necessary data manipulations.
+
+    """
+
     # Extract spell info from saved JSON and store in a CSV file
     spells = data_processing.load_json_data(config.SPELLS)
     spells.to_csv(config.SPELLS_CSV)
@@ -69,27 +76,16 @@ def process_data():
     # Save extracted talent tree info to a CSV
     spec_df.to_csv(config.INDEX_CSV, index=False)
 
-    # Save each talent tree's data as separate JSON files
-    data_processing.save_spec_trees(config.INDEX_CSV, config.OUT_DIR)
-
-    # Convert saved JSON files related to talent tree nodes info to CSV format
-    file_utils.convert_talent_nodes_csv(config.OUT_DIR_NODES)
-
-    # Convert saved JSON files related to talent tree info to CSV format
-    file_utils.convert_json_to_csv(config.OUT_DIR)
-
-    # Add class and talent spec to talent tree info and update CSV file
-    file_utils.update_talents_csv(config.OUT_DIR)
-
-
-def driver():
-    """ Main orchestration function. """
-    access_token = initialize_api()
-    fetch_and_save_data(access_token)
-    process_data()
-
 
 def clean_data():
+    """
+    Load datasets, merge them, clean the merged data, and save the cleaned dataset to a CSV file.
+
+    - Load datasets including talent trees, pve talents, pvp talents, and spells.
+    - Merge these datasets into a single dataset.
+    - Perform data cleaning operations on the merged dataset.
+    - Save the cleaned dataset to a specified CSV file path.
+    """
     # Load the datasets
     talent_trees_df, pve_talents_df, pvp_talents_df, spells_df = load_datasets()
 
@@ -103,6 +99,13 @@ def clean_data():
     # Save the cleaned dataset to a CSV file
     cleaned_data.to_csv('/path/to/cleaned_dataset.csv', index=False)
     print("Cleaned dataset saved successfully!")
+
+
+def driver():
+    """ Main orchestration function. """
+    access_token = initialize_api()
+    fetch_and_save_data(access_token)
+    process_data()
 
 
 if __name__ == "__main__":

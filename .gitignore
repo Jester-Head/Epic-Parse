@@ -8,3 +8,4 @@ data
 forums_crawler/settings.py
 scrapy.cfg
 .vscode
+.vscode/settings.json

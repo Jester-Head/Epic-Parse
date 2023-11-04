@@ -46,7 +46,7 @@ class WoWData:
         body = {"grant_type": "client_credentials"}
         auth = HTTPBasicAuth(client_id, client_secret)
 
-        response = requests.post(url, data=body, auth=auth, timeout=0.001)
+        response = requests.post(url, data=body, auth=auth)
         return response.json()
 
     def get_data(self, access_token, url):
@@ -62,7 +62,7 @@ class WoWData:
         - dict: A dictionary representing the JSON response from the API. The structure of this dictionary will depend on the specific API endpoint. If the request fails, returns None.
         """
 
-        response = requests.get(url, timeout=0.001)
+        response = requests.get(url)
         if response.ok:
             return response.json()
         else:
@@ -163,7 +163,7 @@ class WoWData:
         url += f"&access_token={access_token['access_token']}"
         return self.get_data(access_token, url)
 
-    def get_talent_tree(self, access_token, talent_tree):
+    def get_talent_tree_nodes(self, access_token, talent_tree):
         """
         Retrieves the description of a specific talent in WoW using its ID.
 
@@ -202,6 +202,7 @@ class WoWData:
 
     def get_talent_tree_index(self, access_token):
         url = f"{self.base_url}talent-tree/index?namespace={self.namespace}&locale={self.locale}"
+        
         url += f"&access_token={access_token['access_token']}"
         return self.get_data(access_token, url)
 #  Tech Talent API
