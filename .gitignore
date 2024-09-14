@@ -1,0 +1,8 @@
+.vscode
+data
+*.log
+notebooks
+__pycache__
+utilities
+settings.py
+scrapy.cfg
